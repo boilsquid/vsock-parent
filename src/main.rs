@@ -1,8 +1,11 @@
 use nix::sys::socket::{bind, VsockAddr, socket, AddressFamily, SockFlag, SockType};
 use anyhow::Result;
-use std::os::{unix::io::RawFd, fd::IntoRawFd};
+use std::os::fd::{IntoRawFd, AsFd};
+use nix::sys::socket::listen as listen_vsock;
 
 const VMADDR_CID_ANY: u32 = 0xFFFFFFFF;
+
+const BACKLOG: usize = 128;
 
 fn main() {
     println!("Staring vsock-parent");
@@ -12,15 +15,19 @@ fn main() {
 fn listen() -> Result<()> {
     let fd = socket(AddressFamily::Vsock, SockType::Stream, SockFlag::empty(), None)
         .map_err(|e| anyhow::anyhow!("Failed to create socket: {}", e))?;
+    let raw_fd = fd.try_clone().expect("test").into_raw_fd();
+    let as_raw = fd.as_fd();
 
     let port = 8001;
     let sockaddr = VsockAddr::new(VMADDR_CID_ANY, port);
 
-    match bind(fd.into_raw_fd(), &sockaddr) {
+    match bind(raw_fd, &sockaddr) {
         Ok(_) => println!("bound to vsock connection"),
         Err(e) => println!("bind failed: {}", e),
     }
 
+    listen_vsock(&as_raw, BACKLOG)
+        .map_err(|e| anyhow::anyhow!("Failed to listen on vsock: {}", e))?;
 
     Ok(())
 }
