@@ -1,7 +1,8 @@
-use nix::sys::socket::{bind, VsockAddr, socket, AddressFamily, SockFlag, SockType};
+use nix::sys::socket::{bind, VsockAddr, socket, AddressFamily, SockFlag, SockType, accept};
 use anyhow::Result;
 use std::os::fd::{IntoRawFd, AsFd};
 use nix::sys::socket::listen as listen_vsock;
+use std::thread;
 
 const VMADDR_CID_ANY: u32 = 0xFFFFFFFF;
 
@@ -28,6 +29,20 @@ fn listen() -> Result<()> {
 
     listen_vsock(&as_raw, BACKLOG)
         .map_err(|e| anyhow::anyhow!("Failed to listen on vsock: {}", e))?;
+
+    thread::spawn(move || loop {
+        let fd = match accept(raw_fd) {
+            Ok(fd) => fd,
+            Err(e) => {
+                println!("accept failed: {}", e);
+                continue;
+            }
+        };
+
+
+
+        println!("Accepted connection on vsock");
+    });
 
     Ok(())
 }
