@@ -10,7 +10,7 @@ fn main() {
 
 fn listen() -> Result<()> {
     let port = 8001;
-    let sockaddr = VsockAddr::new(VMADDR_CID_ANY, port);
+    let sockaddr = VsockAddr::new(2021, port);
     let server_fd = 2021;
 
 
