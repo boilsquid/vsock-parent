@@ -38,9 +38,6 @@ fn listen() -> Result<()> {
                 continue;
             }
         };
-
-
-
         println!("Accepted connection on vsock");
     });
 
