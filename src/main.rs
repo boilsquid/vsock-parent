@@ -10,11 +10,9 @@ fn main() {
 
 fn listen() -> Result<()> {
     let port = 8001;
-    let sockaddr = VsockAddr::new(VMADDR_CID_ANY, port);
-    let server_fd = 2021;
+    let sockaddr = VsockAddr::new(2021, port);
 
-
-    match bind(server_fd, &sockaddr) {
+    match bind(8001, &sockaddr) {
         Ok(_) => println!("bound to vsock connection"),
         Err(e) => println!("bind failed: {}", e),
     }
