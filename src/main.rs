@@ -1,16 +1,29 @@
 use nix::sys::socket::{bind, VsockAddr, socket, AddressFamily, SockFlag, SockType, accept};
 use anyhow::Result;
-use std::os::fd::{IntoRawFd, AsFd};
+use std::{os::fd::{IntoRawFd, AsFd}, sync::Arc};
 use nix::sys::socket::listen as listen_vsock;
 use std::thread;
+use std::sync::Mutex;
 
 const VMADDR_CID_ANY: u32 = 0xFFFFFFFF;
 
 const BACKLOG: usize = 128;
 
 fn main() {
+    let running = Arc::new(Mutex::new(true));
+    let running_clone = running.clone();
+
     println!("Staring vsock-parent");
-    listen().expect("Failed to listen on vsock");
+    thread::spawn(move || {
+        listen().expect("Failed to listen on vsock");
+        let mut running = running_clone.lock().unwrap();
+        *running = false;
+    });
+
+    let running_lock = running.lock().unwrap();
+    while *running_lock {
+        thread::sleep(std::time::Duration::from_millis(100));
+    }
 }
 
 fn listen() -> Result<()> {
